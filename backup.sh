@@ -50,25 +50,31 @@ if [[ -z "${FILE_RETENTION}" ]]; then
 	echo "FILE_RETENTION is missing"
 	exit 1
 fi
-if [[ -z "${S3_ACCESS_KEY}" ]]; then
-	echo "S3_ACCESS_KEY is missing"
+if [[ -z "${S3_UPLOAD_ENABLED}" ]]; then
+	echo "S3_UPLOAD_ENABLED is missing"
 	exit 1
 fi
-if [[ -z "${S3_SECRET_KEY}" ]]; then
-	echo "S3_SECRET_KEY is missing"
-	exit 1
-fi
-if [[ -z "${S3_ENDPOINT}" ]]; then
-	echo "S3_ENDPOINT is missing"
-	exit 1
-fi
-if [[ -z "${S3_BUCKET}" ]]; then
-	echo "S3_BUCKET is missing"
-	exit 1
-fi
-if [[ -z "${S3_RETENTION}" ]]; then
-	echo "S3_RETENTION is missing"
-	exit 1
+if [[ "${S3_UPLOAD_ENABLED}" == "true" ]]; then
+	if [[ -z "${S3_ACCESS_KEY}" ]]; then
+		echo "S3_ACCESS_KEY is missing"
+		exit 1
+	fi
+	if [[ -z "${S3_SECRET_KEY}" ]]; then
+		echo "S3_SECRET_KEY is missing"
+		exit 1
+	fi
+	if [[ -z "${S3_ENDPOINT}" ]]; then
+		echo "S3_ENDPOINT is missing"
+		exit 1
+	fi
+	if [[ -z "${S3_BUCKET}" ]]; then
+		echo "S3_BUCKET is missing"
+		exit 1
+	fi
+	if [[ -z "${S3_RETENTION}" ]]; then
+		echo "S3_RETENTION is missing"
+		exit 1
+	fi
 fi
 set -x
 
@@ -92,15 +98,17 @@ gzip "${DUMPFILE}"
 # file retention policy
 ls -dt ${PGDUMPPATH}/* | tail -n +${FILE_RETENTION} | xargs -d '\n' -r rm --
 
-# upload to s3
-set +x
-mc alias set s3 "${S3_ENDPOINT}" "${S3_ACCESS_KEY}" "${S3_SECRET_KEY}" --api S3v4 || true
-set -x
-mc mb --ignore-existing "s3/${S3_BUCKET}"
-S3_FILENAME=$(basename "${DUMPFILE_GZ}")
-mc cp "${DUMPFILE_GZ}" "s3/${S3_BUCKET}/pgbackup/${S3_FILENAME}"
+if [[ "${S3_UPLOAD_ENABLED}" == "true" ]]; then
+	# upload to s3
+	set +x
+	mc alias set s3 "${S3_ENDPOINT}" "${S3_ACCESS_KEY}" "${S3_SECRET_KEY}" --api S3v4 || true
+	set -x
+	mc mb --ignore-existing "s3/${S3_BUCKET}"
+	S3_FILENAME=$(basename "${DUMPFILE_GZ}")
+	mc cp "${DUMPFILE_GZ}" "s3/${S3_BUCKET}/pgbackup/${S3_FILENAME}"
 
-# s3 retention policy
-mc rm --recursive --force --older-than "${S3_RETENTION}" "s3/${S3_BUCKET}/pgbackup/"
+	# s3 retention policy
+	mc rm --recursive --force --older-than "${S3_RETENTION}" "s3/${S3_BUCKET}/pgbackup/"
+fi
 
 exit 0

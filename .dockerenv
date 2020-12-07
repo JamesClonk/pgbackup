@@ -9,3 +9,4 @@ S3_SECRET_KEY=eW9sbywgeW91IGhhdmUganVzdCBiZWVuIHRyb2xsZWQh
 S3_ENDPOINT=http://localhost:9000
 S3_BUCKET=deadbeef
 S3_RETENTION=14d
+S3_UPLOAD_ENABLED=true

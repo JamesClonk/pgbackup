@@ -13,3 +13,12 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# archives
+*.zip
+*.tgz
+*.gz
+*.tar
+
+# test dumps
+tmp/*.dump
